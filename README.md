@@ -2,7 +2,7 @@
 
 Prosta aplikacja mobilna ułatwiająca śledzenie zawartych zakładów bukmacherskich, kontrolowanie budżetu oraz analizę statystyk (bilans, ROI). 
 
-> **Uwaga:** Jest to moja pierwsza w pełni samodzielna aplikacja mobilna stworzona w React Native! Projekt powstał głównie w celach edukacyjnych i jest w stałym rozwoju. Kod i funkcjonalności będą z czasem refaktoryzowane i ulepszane.
+> **Uwaga:** Jest to moja pierwsza aplikacja mobilna. Projekt powstał głównie do użytku własnego, w celach edukacyjnych i jest w stałym rozwoju. Kod i funkcjonalności będą z czasem refaktoryzowane i ulepszane.
 
 ## 📸 Zrzuty ekranu
 
