@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  InteractionManager,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import {
@@ -84,36 +90,54 @@ export function AccountScreen() {
   };
 
   const generateReport = async (range: TimeRange) => {
-    const canShare = await Sharing.isAvailableAsync();
-    if (!canShare) {
-      Alert.alert('Brak udostępniania', 'Ta funkcja nie jest dostępna na tym urządzeniu.');
-      return;
+    try {
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert('Brak udostępniania', 'Ta funkcja nie jest dostępna na tym urządzeniu.');
+        return;
+      }
+
+      setReportRange(range);
+      await new Promise<void>((resolve) => {
+        InteractionManager.runAfterInteractions(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 200);
+            });
+          });
+        });
+      });
+
+      const uri = await viewShotRef.current?.capture?.();
+      if (!uri) {
+        Alert.alert(
+          'Błąd',
+          'Nie udało się wygenerować grafiki raportu. Spróbuj ponownie.',
+        );
+        return;
+      }
+
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Udostępnij raport',
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      Alert.alert('Błąd raportu', message);
     }
-
-    setReportRange(range);
-    await new Promise((r) => setTimeout(r, 120));
-
-    const uri = await viewShotRef.current?.capture?.();
-    if (!uri) {
-      Alert.alert('Błąd', 'Nie udało się wygenerować raportu.');
-      return;
-    }
-
-    await Sharing.shareAsync(uri);
   };
 
   const report = buildReport(reportRange);
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{
-        padding: 16,
-        paddingBottom: 32 + insets.bottom,
-      }}
-    >
-      {/* Ukryte płótno 1080×1080 do zrzutu (social media). */}
-      <View style={styles.captureWrap}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      {/*
+        Płótno zrzutu MUSI być poza ScrollView: na Androidzie ScrollView
+        usuwa z natywnego drzewa widoki poza viewportem (np. left: -10000),
+        przez co capture() w release APK zwracało null — bez try/catch wyglądało
+        to jak „nic się nie dzieje”. Warstwa jest pod scrolliem, niewidoczna.
+      */}
+      <View style={styles.captureWrap} pointerEvents="none" collapsable={false}>
         <ViewShot
           ref={viewShotRef}
           options={{ format: 'png', quality: 1 }}
@@ -287,6 +311,14 @@ export function AccountScreen() {
         </ViewShot>
       </View>
 
+      <ScrollView
+        style={{ flex: 1 }}
+        removeClippedSubviews={false}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: 32 + insets.bottom,
+        }}
+      >
       <Text variant="titleLarge" style={{ color: theme.colors.onSurface, marginBottom: 16 }}>
         Ustawienia i konto
       </Text>
@@ -379,7 +411,8 @@ export function AccountScreen() {
           </Text>
         </Card.Content>
       </Card>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -401,10 +434,12 @@ const styles = StyleSheet.create({
   },
   captureWrap: {
     position: 'absolute',
-    left: -10000,
+    left: 0,
     top: 0,
+    opacity: 0,
     width: 1080,
     height: 1080,
+    overflow: 'hidden',
   },
   captureShot: {
     width: 1080,

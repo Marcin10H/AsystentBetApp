@@ -3,9 +3,9 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { CouponsProvider } from './src/context/CouponsContext';
 import { UserProfileProvider } from './src/context/UserProfileContext';
 import { AppTabs } from './src/navigation/AppTabs';
@@ -25,6 +25,7 @@ function PaperIcon(props: any) {
 /** Aplikacja tylko w trybie ciemnym (bez przełącznika motywu). */
 export default function App() {
   const [showStartscreen, setShowStartscreen] = React.useState(true);
+  const { width: winW, height: winH } = useWindowDimensions();
   const paper = darkPaperTheme;
 
   const navTheme = {
@@ -40,23 +41,31 @@ export default function App() {
   };
 
   React.useEffect(() => {
-    const t = setTimeout(() => setShowStartscreen(false), 900);
+    const t = setTimeout(() => setShowStartscreen(false), 2200);
     return () => clearTimeout(t);
   }, []);
 
+  const splashLogoSize = React.useMemo(() => {
+    const maxW = Math.min(winW * 0.78, 360);
+    const maxH = Math.min(winH * 0.5, 520);
+    return { width: maxW, height: maxH };
+  }, [winW, winH]);
+
   return (
     <GestureHandlerRootView style={styles.root}>
-      {showStartscreen ? (
-        <View style={styles.startscreen}>
-          <Image
-            source={require('./assets/startscreen.png')}
-            style={styles.startscreenImage}
-            resizeMode="contain"
-          />
-          <StatusBar style="light" />
-        </View>
-      ) : null}
       <SafeAreaProvider>
+        {showStartscreen ? (
+          <View style={styles.startscreen} pointerEvents="box-none">
+            <SafeAreaView style={styles.startscreenSafe} edges={['top', 'bottom']}>
+              <Image
+                source={require('./assets/splash-logo.png')}
+                style={splashLogoSize}
+                resizeMode="contain"
+              />
+            </SafeAreaView>
+            <StatusBar style="light" />
+          </View>
+        ) : null}
         <UserProfileProvider>
           <CouponsProvider>
             <PaperProvider
@@ -84,12 +93,11 @@ const styles = StyleSheet.create({
   startscreen: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#121212',
-    justifyContent: 'center',
-    alignItems: 'center',
     zIndex: 1000,
   },
-  startscreenImage: {
-    width: '100%',
-    height: '100%',
+  startscreenSafe: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
