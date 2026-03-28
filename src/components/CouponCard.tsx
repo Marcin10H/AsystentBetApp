@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Card, Text, useTheme } from 'react-native-paper';
+import { Card, Chip, Text, useTheme } from 'react-native-paper';
 import type { Coupon, CouponStatus } from '../types/coupon';
 
 function statusLabel(status: CouponStatus) {
@@ -20,7 +20,6 @@ type Props = {
   onPress: () => void;
 };
 
-/** Karta pojedynczego kuponu na liście — tap otwiera edycję / zmianę statusu. */
 export function CouponCard({ coupon, onPress }: Props) {
   const theme: any = useTheme();
   const dot = statusColor(coupon.status, theme);
@@ -33,9 +32,21 @@ export function CouponCard({ coupon, onPress }: Props) {
       >
         <Card.Content>
           <View style={styles.header}>
-            <Text variant="titleMedium" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-              {coupon.nazwaBukmachera || '—'}
-            </Text>
+            <View style={styles.titleBlock}>
+              <Text variant="titleMedium" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
+                {coupon.nazwaBukmachera || '—'}
+              </Text>
+              {coupon.freebet ? (
+                <Chip
+                  compact
+                  mode="flat"
+                  style={styles.freebetChip}
+                  textStyle={styles.freebetChipText}
+                >
+                  Freebet
+                </Chip>
+              ) : null}
+            </View>
             <View style={styles.statusRow}>
               <View style={[styles.dot, { backgroundColor: dot }]} />
               <Text
@@ -100,8 +111,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
+    gap: 8,
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  freebetChip: {
+    alignSelf: 'flex-start',
+    marginTop: 2,
+    height: 28,
+  },
+  freebetChipText: {
+    fontSize: 11,
+    marginVertical: 0,
   },
   statusRow: {
     flexDirection: 'row',

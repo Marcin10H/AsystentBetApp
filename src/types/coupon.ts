@@ -1,10 +1,5 @@
-/**
- * Status kuponu po rozliczeniu u bukmachera.
- * W_GRZE — zakład jeszcze nie rozliczony.
- */
 export type CouponStatus = 'W_GRZE' | 'WYGRANY' | 'PRZEGRANY';
 
-/** Pojedynczy kupon bukmacherski zapisany lokalnie w aplikacji. */
 export interface Coupon {
   id: string;
   nazwaBukmachera: string;
@@ -13,4 +8,5 @@ export interface Coupon {
   potencjalnaWygrana: number;
   dataDodania: string;
   status: CouponStatus;
+  freebet?: boolean; // jeśli true, stawka nie idzie do bilansu
 }

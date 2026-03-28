@@ -14,6 +14,7 @@ type NewCouponInput = {
   kurs: number;
   potencjalnaWygrana: number;
   status: CouponStatus;
+  freebet?: boolean;
 };
 
 type CouponsContextValue = {
@@ -41,6 +42,7 @@ function parseCoupons(raw: string | null): Coupon[] {
       stawka: Number((item as Coupon).stawka),
       kurs: Number((item as Coupon).kurs),
       potencjalnaWygrana: Number((item as Coupon).potencjalnaWygrana),
+      freebet: Boolean((item as Coupon).freebet),
     }));
   } catch {
     return [];
@@ -51,7 +53,7 @@ export function CouponsProvider({ children }: { children: React.ReactNode }) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Wczytanie kuponów z pamięci lokalnej przy starcie
+  // Start: wczytanie kuponów z AsyncStorage.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -67,7 +69,6 @@ export function CouponsProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Dodawanie / edycja / usuwanie + zapis do AsyncStorage
   const addCoupon = async (input: NewCouponInput) => {
     const row: Coupon = {
       id: generateId(),
@@ -75,14 +76,13 @@ export function CouponsProvider({ children }: { children: React.ReactNode }) {
       stawka: input.stawka,
       kurs: input.kurs,
       potencjalnaWygrana: input.potencjalnaWygrana,
-      // Data w ISO, żeby potem łatwo filtrować po czasie
       dataDodania: new Date().toISOString(),
       status: input.status,
+      ...(input.freebet ? { freebet: true } : {}),
     };
 
-    const next = [row, ...coupons];
+    const next = [row, ...coupons]; // najnowszy na górze listy
     setCoupons(next);
-    // Zapis do pamięci lokalnej
     await AsyncStorage.setItem(STORAGE_KEYS.coupons, JSON.stringify(next));
   };
 
@@ -98,7 +98,6 @@ export function CouponsProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.coupons, JSON.stringify(next));
   };
 
-  /** Czyści tylko kupony (profil i motyw zostają — reset pełny robi Account). */
   const clearAllCoupons = async () => {
     setCoupons([]);
     await AsyncStorage.removeItem(STORAGE_KEYS.coupons);

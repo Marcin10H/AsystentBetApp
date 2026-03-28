@@ -1,4 +1,4 @@
-/** Klucze AsyncStorage — używane też przy pełnym resecie danych. */
+// Stałe klucze — reset konta też je usuwa.
 export const STORAGE_KEYS = {
   coupons: '@asystent_bukmachera/coupons',
   theme: '@asystent_bukmachera/theme',

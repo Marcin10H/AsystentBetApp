@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useRef, useState } from 'react';
 import {
   Alert,
+  Image,
   InteractionManager,
   ScrollView,
   StyleSheet,
@@ -22,9 +23,14 @@ import { STORAGE_KEYS } from '../constants/storageKeys';
 import { useCoupons } from '../context/CouponsContext';
 import { useUserProfile } from '../context/UserProfileContext';
 import type { TimeRange } from '../utils/dateRange';
-import { couponsInRange, roiPercent, sumStakes, sumWinnings, totalBalance } from '../utils/stats';
+import {
+  couponsInRange,
+  formatStakesWithFreebetHint,
+  roiPercent,
+  sumWinnings,
+  totalBalance,
+} from '../utils/stats';
 
-/** Ekran 4: profil, reset danych, informacja o projekcie. */
 export function AccountScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -71,22 +77,16 @@ export function AccountScreen() {
   const buildReport = (range: TimeRange) => {
     const filtered = couponsInRange(coupons, range);
     const balance = totalBalance(filtered);
-    const stakes = sumStakes(filtered);
+    const stakesDisplay = formatStakesWithFreebetHint(filtered);
     const wins = sumWinnings(filtered);
     const roi = roiPercent(filtered);
     return {
       couponCount: filtered.length,
       balance,
-      stakes,
+      stakesDisplay,
       wins,
       roi,
     };
-  };
-
-  const reportTitle = (range: TimeRange) => {
-    if (range === 'week') return 'Moje statystyki — Ten tydzień';
-    if (range === 'month') return 'Moje statystyki — Ten miesiąc';
-    return 'Moje statystyki — Ten rok';
   };
 
   const generateReport = async (range: TimeRange) => {
@@ -98,6 +98,7 @@ export function AccountScreen() {
       }
 
       setReportRange(range);
+      // Krótka pauza — layout zdąży pokazać wybrany okres przed capture().
       await new Promise<void>((resolve) => {
         InteractionManager.runAfterInteractions(() => {
           requestAnimationFrame(() => {
@@ -131,12 +132,7 @@ export function AccountScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {/*
-        Płótno zrzutu MUSI być poza ScrollView: na Androidzie ScrollView
-        usuwa z natywnego drzewa widoki poza viewportem (np. left: -10000),
-        przez co capture() w release APK zwracało null — bez try/catch wyglądało
-        to jak „nic się nie dzieje”. Warstwa jest pod scrolliem, niewidoczna.
-      */}
+      {/* Warstwa zrzutu poza ScrollView — inaczej capture() na Androidzie bywa puste. */}
       <View style={styles.captureWrap} pointerEvents="none" collapsable={false}>
         <ViewShot
           ref={viewShotRef}
@@ -149,7 +145,6 @@ export function AccountScreen() {
               { backgroundColor: theme.colors.surface },
             ]}
           >
-            {/* Tło raportu: delikatne „plamy” i akcenty koloru. */}
             <View pointerEvents="none" style={StyleSheet.absoluteFill}>
               <View
                 style={[
@@ -173,33 +168,40 @@ export function AccountScreen() {
               />
             </View>
 
-            <View style={styles.captureHeader}>
-              <Text
-                variant="headlineLarge"
-                style={[styles.captureTitle, { color: theme.colors.onSurface }]}
-              >
-                Moje statystyki
-              </Text>
-              <View
-                style={[
-                  styles.captureBadge,
-                  {
-                    backgroundColor: theme.colors.primaryContainer,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-              >
-                <Text style={[styles.captureBadgeText, { color: theme.colors.primary }]}>
-                  {reportRange === 'week'
-                    ? 'Ten tydzień'
-                    : reportRange === 'month'
-                      ? 'Ten miesiąc'
-                      : 'Ten rok'}
-                </Text>
-              </View>
-            </View>
+            <Image
+              source={require('../../assets/splash-logo.png')}
+              style={styles.captureBrandLogo}
+              resizeMode="contain"
+            />
 
-            <View style={styles.captureTopRow}>
+            <View style={styles.captureInner}>
+              <View style={styles.captureHeader}>
+                <Text
+                  variant="headlineLarge"
+                  style={[styles.captureTitle, { color: theme.colors.onSurface }]}
+                >
+                  Moje statystyki
+                </Text>
+                <View
+                  style={[
+                    styles.captureBadge,
+                    {
+                      backgroundColor: theme.colors.primaryContainer,
+                      borderColor: theme.colors.primary,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.captureBadgeText, { color: theme.colors.primary }]}>
+                    {reportRange === 'week'
+                      ? 'Ten tydzień'
+                      : reportRange === 'month'
+                        ? 'Ten miesiąc'
+                        : 'Ten rok'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.captureTopRow}>
               <View
                 style={[
                   styles.captureCircleCard,
@@ -261,10 +263,15 @@ export function AccountScreen() {
                 ]}
               >
                 <Text style={[styles.captureLabel, { color: theme.colors.onSurfaceVariant }]}>
-                  Suma stawek
+                  Suma stawek (w tym freebet)
                 </Text>
-                <Text style={[styles.captureTileValue, { color: theme.colors.onSurface }]}>
-                  {report.stakes.toFixed(2)} PLN
+                <Text
+                  style={[styles.captureTileValue, { color: theme.colors.onSurface }]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
+                  {report.stakesDisplay}
                 </Text>
               </View>
 
@@ -303,10 +310,7 @@ export function AccountScreen() {
                 </Text>
               </View>
             </View>
-
-            <Text style={[styles.captureFooter, { color: theme.colors.onSurfaceVariant }]}>
-              Asystent Bukmachera
-            </Text>
+            </View>
           </View>
         </ViewShot>
       </View>
@@ -448,16 +452,32 @@ const styles = StyleSheet.create({
   captureCard: {
     width: 1080,
     height: 1080,
-    padding: 64,
     justifyContent: 'flex-start',
+    overflow: 'visible',
+  },
+  captureInner: {
+    width: 1080,
+    height: 1080,
+    paddingHorizontal: 64,
+    paddingVertical: 54,
+    overflow: 'visible',
+  },
+  captureBrandLogo: {
+    position: 'absolute',
+    left: 30,
+    top: -30,
+    width: 272,
+    height: 272,
+    zIndex: 2,
   },
   captureHeader: {
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   captureTitle: {
     textAlign: 'center',
     letterSpacing: 0.2,
+    fontSize: 38,
   },
   captureBadge: {
     borderWidth: 1,
@@ -466,12 +486,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   captureBadgeText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   captureTopRow: {
-    marginTop: 26,
+    marginTop: 46,
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 22,
@@ -486,51 +506,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   captureGrid: {
-    marginTop: 26,
+    marginTop: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 22,
+    rowGap: 18,
   },
   captureTile: {
     width: 448,
-    minHeight: 190,
+    minHeight: 176,
     borderRadius: 22,
     borderWidth: 3,
-    padding: 26,
+    padding: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   captureTileWide: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 188,
   },
   captureLabel: {
-    fontSize: 18,
+    fontSize: 20,
     letterSpacing: 0.2,
     fontWeight: '600',
   },
   captureCircleValue: {
-    fontSize: 64,
+    fontSize: 70,
     fontWeight: '800',
     letterSpacing: -0.6,
     textAlign: 'center',
   },
   captureUnit: {
     marginTop: 6,
-    fontSize: 18,
+    fontSize: 20,
     letterSpacing: 0.2,
     fontWeight: '600',
   },
   captureTileValue: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '700',
     letterSpacing: -0.2,
     textAlign: 'center',
   },
   captureRoiValue: {
-    fontSize: 56,
+    fontSize: 62,
     fontWeight: '800',
     letterSpacing: -0.4,
   },
@@ -558,10 +578,5 @@ const styles = StyleSheet.create({
     opacity: 0.14,
     transform: [{ rotate: '-12deg' }],
     borderRadius: 40,
-  },
-  captureFooter: {
-    marginTop: 28,
-    textAlign: 'center',
-    opacity: 0.9,
   },
 });

@@ -4,42 +4,61 @@ import {
   type TimeRange,
 } from './dateRange';
 
-/** Kupony w danym zakresie czasu (po dataDodania). */
 export function couponsInRange(coupons: Coupon[], range: TimeRange): Coupon[] {
   return filterCouponsByTimeRange(coupons, range);
 }
 
-/** Suma wszystkich stawek w zbiorze kuponów. */
 export function sumStakes(list: Coupon[]): number {
+  return list.reduce((s, c) => {
+    // Freebet = nie odejmujemy od bilansu jak własnej gotówki.
+    if (c.freebet) return s;
+    return s + (Number.isFinite(c.stawka) ? c.stawka : 0);
+  }, 0);
+}
+
+/** Wszystkie stawki z pola stawka (własne + freebet — do podglądu). */
+export function sumStakesAll(list: Coupon[]): number {
   return list.reduce((s, c) => s + (Number.isFinite(c.stawka) ? c.stawka : 0), 0);
 }
 
-/**
- * Suma „wygranych” — dla statusu WYGRANY traktujemy potencjalnaWygrana
- * jako faktyczną wypłatę po rozliczeniu.
- */
+export function sumStakesFreebetOnly(list: Coupon[]): number {
+  return list.reduce((s, c) => {
+    if (!c.freebet) return s;
+    return s + (Number.isFinite(c.stawka) ? c.stawka : 0);
+  }, 0);
+}
+
+/** Np. "12.00 PLN (3.00 PLN)" gdy jest freebet; samo "12.00 PLN" gdy nie. */
+export function formatStakesWithFreebetHint(list: Coupon[]): string {
+  const total = sumStakesAll(list);
+  const fb = sumStakesFreebetOnly(list);
+  const t = total.toFixed(2);
+  if (fb <= 0) return `${t} PLN`;
+  return `${t} PLN (${fb.toFixed(2)} PLN)`;
+}
+
 export function sumWinnings(list: Coupon[]): number {
   return list
     .filter((c) => c.status === 'WYGRANY')
     .reduce((s, c) => s + (Number.isFinite(c.potencjalnaWygrana) ? c.potencjalnaWygrana : 0), 0);
 }
 
-/** Bilans: wpływy z wygranych minus łączna suma stawek (ten sam zbiór kuponów). */
 export function totalBalance(list: Coupon[]): number {
+  // W sumStakes freebety już są pominięte.
   return sumWinnings(list) - sumStakes(list);
 }
 
 /**
- * ROI w %: (bilans / suma stawek) * 100.
- * Przy braku stawek zwracamy 0, żeby uniknąć dzielenia przez zero.
+ * ROI od sumy nominalnych stawek (własne + freebet), spójnej z „Suma stawek (w tym freebet)”.
+ * Zysk = wygrane − ta suma — wygrana z freebetu liczy się normalnie, nominal freebetu jest w mianowniku.
  */
 export function roiPercent(list: Coupon[]): number {
-  const stakes = sumStakes(list);
-  if (stakes <= 0) return 0;
-  return (totalBalance(list) / stakes) * 100;
+  const stakesAll = sumStakesAll(list);
+  if (stakesAll <= 0) return 0;
+  const profit = sumWinnings(list) - stakesAll;
+  return (profit / stakesAll) * 100;
 }
 
-/** Skuteczność: wygrane / (wygrane + przegrane), bez W_GRZE. Wynik 0–100 %. */
 export function winRatePercent(list: Coupon[]): number {
   const settled = list.filter((c) => c.status === 'WYGRANY' || c.status === 'PRZEGRANY');
   const wins = settled.filter((c) => c.status === 'WYGRANY').length;
@@ -51,14 +70,12 @@ export function winRatePercent(list: Coupon[]): number {
 
 export type ChartPoint = { label: string; value: number };
 
-/** Etykieta dnia na oś X: zawsze DD.MM (np. 01.03, 24.03). */
 export function formatDayMonthLabel(d: Date): string {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}.${mm}`;
 }
 
-/** Skrócone nazwy miesięcy na oś X (rok). */
 const MONTH_LABELS_PL = [
   'Sty',
   'Lut',
@@ -74,12 +91,6 @@ const MONTH_LABELS_PL = [
   'Gru',
 ];
 
-/**
- * Seria pod wykres zysku/straty — zależnie od filtra czasu:
- * - tydzień: zawsze 7 punktów (dziś − 6 … dziś), skumulowanie dzienne
- * - miesiąc: od 1. dnia miesiąca do dziś, dzień po dniu, skumulowanie
- * - rok: zawsze 12 punktów (Sty…Gru), skumulowany bilans po miesiącach
- */
 export function cumulativeProfitSeries(
   coupons: Coupon[],
   range: TimeRange
@@ -149,7 +160,6 @@ export function cumulativeProfitSeries(
     return points;
   }
 
-  /* Rok: 12 punktów (Sty…Gru), skumulowany bilans w obrębie każdego miesiąca. */
   const year = now.getFullYear();
   const inYear = coupons.filter((c) => new Date(c.dataDodania).getFullYear() === year);
 
@@ -171,7 +181,7 @@ export function cumulativeProfitSeries(
   return points;
 }
 
-/** Dzienny / miesięczny netto: wygrane (WYGRANY) minus wszystkie stawki w tym okresie. */
+// Netto w kawałku czasu — używane do skumulowanego wykresu.
 function netForCoupons(slice: Coupon[]): number {
   const stakes = sumStakes(slice);
   const wins = slice

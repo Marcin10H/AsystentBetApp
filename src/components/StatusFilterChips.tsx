@@ -16,7 +16,6 @@ function statusFilterLabel(f: StatusFilter): string {
   return 'Wszystkie';
 }
 
-/** Filtr listy kuponów po statusie („W grze” tylko w „Wszystkie”). */
 export function StatusFilterChips({ value, onChange }: Props) {
   const theme = useTheme();
   const keys: StatusFilter[] = ['all', 'WYGRANY', 'PRZEGRANY'];

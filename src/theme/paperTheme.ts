@@ -1,7 +1,5 @@
 import { MD3DarkTheme } from 'react-native-paper';
 
-/** Motyw Paper — ciemny (domyślny dla aplikacji). */
-// Prosty motyw do Paper (żeby nie bawić się w zaawansowane typy TS)
 export const darkPaperTheme: any = {
   ...(MD3DarkTheme as any),
   colors: {

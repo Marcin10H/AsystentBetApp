@@ -17,7 +17,6 @@ import {
   type TimeRange,
 } from '../utils/dateRange';
 
-/** Ekran 2: lista kuponów, filtry, FAB i modale dodawania / edycji. */
 export function CouponsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();

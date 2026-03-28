@@ -21,16 +21,15 @@ import type { TimeRange } from '../utils/dateRange';
 import {
   couponsInRange,
   cumulativeProfitSeries,
+  formatStakesWithFreebetHint,
   roiPercent,
-  sumStakes,
   sumWinnings,
   totalBalance,
 } from '../utils/stats';
 
-/** Szerokość pod wykres: padding ekranu (16×2) + Card.Content (16×2). */
+// Szerokość wykresu ≈ ekran minus paddingi (16+16 z ekranu, 16+16 z Card).
 const CHART_LAYOUT_WIDTH_OFFSET = 64;
 
-/** Ekran 1: podsumowanie finansowe + wykres + filtry czasu. */
 export function DashboardScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -45,7 +44,7 @@ export function DashboardScreen() {
   const couponCountInPeriod = filtered.length;
   const balance = totalBalance(filtered);
   const roi = roiPercent(filtered);
-  const stakes = sumStakes(filtered);
+  const stakesLine = formatStakesWithFreebetHint(filtered);
   const wins = sumWinnings(filtered);
   const series = cumulativeProfitSeries(coupons, range);
 
@@ -161,8 +160,8 @@ export function DashboardScreen() {
       <View style={styles.statsRow}>
         <StatPill label="ROI" value={`${roi.toFixed(1)} %`} theme={theme} />
         <StatPill
-          label="Suma stawek"
-          value={`${stakes.toFixed(2)} PLN`}
+          label="Suma stawek (w tym freebet)"
+          value={stakesLine}
           theme={theme}
         />
         <StatPill
@@ -221,7 +220,13 @@ function StatPill({
       </Text>
       <Text
         variant="titleSmall"
-        style={[styles.statPillValue, { color: theme.colors.primary }]}
+        style={[
+          styles.statPillValue,
+          { color: theme.colors.primary, textAlign: 'center' },
+        ]}
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
       >
         {value}
       </Text>

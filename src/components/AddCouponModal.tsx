@@ -5,6 +5,7 @@ import {
   Modal,
   Portal,
   SegmentedButtons,
+  Switch,
   Text,
   TextInput,
   useTheme,
@@ -21,6 +22,7 @@ type Props = {
     kurs: number;
     potencjalnaWygrana: number;
     status: CouponStatus;
+    freebet: boolean;
   }) => Promise<void>;
 };
 
@@ -30,7 +32,6 @@ const STATUS_OPTIONS: { value: CouponStatus; label: string }[] = [
   { value: 'PRZEGRANY', label: 'Przegrany' },
 ];
 
-/** Modal z formularzem dodawania nowego kuponu. */
 export function AddCouponModal({ visible, onDismiss, onSubmit }: Props) {
   const theme = useTheme();
   const [nazwa, setNazwa] = useState('');
@@ -38,6 +39,7 @@ export function AddCouponModal({ visible, onDismiss, onSubmit }: Props) {
   const [stawka, setStawka] = useState('');
   const [wygrana, setWygrana] = useState('');
   const [status, setStatus] = useState<CouponStatus>('W_GRZE');
+  const [freebet, setFreebet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +49,7 @@ export function AddCouponModal({ visible, onDismiss, onSubmit }: Props) {
     setStawka('');
     setWygrana('');
     setStatus('W_GRZE');
+    setFreebet(false);
     setError(null);
   };
 
@@ -84,6 +87,7 @@ export function AddCouponModal({ visible, onDismiss, onSubmit }: Props) {
         stawka: s,
         potencjalnaWygrana: w,
         status,
+        freebet,
       });
       reset();
       onDismiss();
@@ -134,6 +138,12 @@ export function AddCouponModal({ visible, onDismiss, onSubmit }: Props) {
               mode="outlined"
               style={styles.input}
             />
+            <View style={styles.switchRow}>
+              <Text variant="bodyLarge" style={styles.switchLabel}>
+                Freebet
+              </Text>
+              <Switch value={freebet} onValueChange={setFreebet} />
+            </View>
             <TextInput
               label="Kwota do wygrania (PLN)"
               value={wygrana}
@@ -195,6 +205,17 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 8,
     marginBottom: 8,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  switchLabel: {
+    flex: 1,
   },
   actions: {
     flexDirection: 'row',

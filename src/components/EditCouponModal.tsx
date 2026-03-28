@@ -12,6 +12,7 @@ import {
   Modal,
   Portal,
   SegmentedButtons,
+  Switch,
   Text,
   TextInput,
   useTheme,
@@ -33,10 +34,6 @@ const STATUS_OPTIONS: { value: CouponStatus; label: string }[] = [
   { value: 'PRZEGRANY', label: 'Przegrany' },
 ];
 
-/**
- * Edycja kuponu — po rozliczeniu u bukmachera ustawiasz Wygrany / Przegrany,
- * żeby bilans i statystyki były poprawne.
- */
 export function EditCouponModal({
   visible,
   coupon,
@@ -50,6 +47,7 @@ export function EditCouponModal({
   const [stawka, setStawka] = useState('');
   const [wygrana, setWygrana] = useState('');
   const [status, setStatus] = useState<CouponStatus>('W_GRZE');
+  const [freebet, setFreebet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -60,6 +58,7 @@ export function EditCouponModal({
       setStawka(String(coupon.stawka));
       setWygrana(String(coupon.potencjalnaWygrana));
       setStatus(coupon.status);
+      setFreebet(Boolean(coupon.freebet));
       setError(null);
     }
   }, [coupon, visible]);
@@ -99,6 +98,7 @@ export function EditCouponModal({
         stawka: s,
         potencjalnaWygrana: w,
         status,
+        freebet,
       });
       onDismiss();
     } catch {
@@ -173,6 +173,12 @@ export function EditCouponModal({
               mode="outlined"
               style={styles.input}
             />
+            <View style={styles.switchRow}>
+              <Text variant="bodyLarge" style={styles.switchLabel}>
+                Freebet
+              </Text>
+              <Switch value={freebet} onValueChange={setFreebet} />
+            </View>
             <TextInput
               label="Kwota do wygrania (PLN)"
               value={wygrana}
@@ -245,6 +251,17 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 8,
     marginBottom: 8,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  switchLabel: {
+    flex: 1,
   },
   actions: {
     flexDirection: 'row',

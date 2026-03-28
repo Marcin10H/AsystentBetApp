@@ -11,7 +11,7 @@ import { UserProfileProvider } from './src/context/UserProfileContext';
 import { AppTabs } from './src/navigation/AppTabs';
 import { darkPaperTheme } from './src/theme/paperTheme';
 
-/** Ikony Material dla komponentów react-native-paper (Expo). */
+// Paper wymaga własnego renderu ikon (tu: MaterialCommunityIcons).
 function PaperIcon(props: any) {
   return (
     <MaterialCommunityIcons
@@ -22,7 +22,6 @@ function PaperIcon(props: any) {
   );
 }
 
-/** Aplikacja tylko w trybie ciemnym (bez przełącznika motywu). */
 export default function App() {
   const [showStartscreen, setShowStartscreen] = React.useState(true);
   const { width: winW, height: winH } = useWindowDimensions();
@@ -41,11 +40,13 @@ export default function App() {
   };
 
   React.useEffect(() => {
+    // Prosty splash na wejście; potem znika sam.
     const t = setTimeout(() => setShowStartscreen(false), 2200);
     return () => clearTimeout(t);
   }, []);
 
   const splashLogoSize = React.useMemo(() => {
+    // Logo na środku, bez „rozciągania” na cały ekran.
     const maxW = Math.min(winW * 0.78, 360);
     const maxH = Math.min(winH * 0.5, 520);
     return { width: maxW, height: maxH };

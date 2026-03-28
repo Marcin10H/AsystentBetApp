@@ -15,7 +15,6 @@ function rangeLabel(r: TimeRange): string {
   return 'Ten rok';
 }
 
-/** Zakres czasu na wykresach / statystykach: tydzień, miesiąc, rok. */
 export function TimeRangeChips({ value, onChange }: Props) {
   const theme = useTheme();
   const keys: TimeRange[] = ['week', 'month', 'year'];

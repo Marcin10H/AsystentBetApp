@@ -28,8 +28,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  // Zapis imienia w AsyncStorage
   const setDisplayName = async (name: string) => {
+    // Zapis imienia lokalnie (powitanie na podsumowaniu).
     const trimmed = name.trim();
     setDisplayNameState(trimmed);
     if (trimmed) await AsyncStorage.setItem(STORAGE_KEYS.displayName, trimmed);

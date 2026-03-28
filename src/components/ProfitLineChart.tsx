@@ -9,14 +9,12 @@ import type { ChartPoint } from '../utils/stats';
 const Y_AXIS_CHART_WIDTH = 108;
 const Y_AXIS_PADDING_RIGHT = 96;
 const MAIN_CHART_PADDING_RIGHT = 12;
-/** Obrót podpisów osi X (tydzień / miesiąc / rok) — mniej nakładania się dat. */
 const X_AXIS_LABEL_ROTATION = -48;
 
 type Props = {
   points: ChartPoint[];
   timeRange: TimeRange;
   height?: number;
-  /** Szerokość obszaru wykresu (np. po odjęciu paddingów karty); inaczej: szerokość okna − 40. */
   screenWidth?: number;
 };
 
@@ -28,11 +26,6 @@ const lineChartBaseStyle = {
   borderRadius: 0,
 };
 
-/**
- * Wykres zysku/straty (react-native-chart-kit).
- * „Sticky” oś Y: osobny wąski LineChart tylko z etykietami PLN + drugi z linią i osią X;
- * ta sama tablica `seriesData` i ten sam `chartConfig`, żeby skala Y się zgadzała.
- */
 export function ProfitLineChart({
   points,
   timeRange,
@@ -94,7 +87,7 @@ export function ProfitLineChart({
     paddingRight: MAIN_CHART_PADDING_RIGHT,
   };
 
-  // Lewy wykres: przezroczysta linia — widać tylko siatkę poziomą i etykiety Y.
+  // Lewy mini-wykres: niewidoczna linia, tylko skala PLN (ta sama co po prawej).
   const dataYAxis = {
     labels,
     datasets: [

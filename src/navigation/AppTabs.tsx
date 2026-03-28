@@ -14,7 +14,6 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-/** Dolna nawigacja — cztery główne sekcje aplikacji. */
 export function AppTabs() {
   const theme = useTheme();
 

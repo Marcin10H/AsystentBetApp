@@ -1,5 +1,4 @@
-/** Parsuje liczbę z pola tekstowego (przecinek lub kropka jako separator). */
 export function parseNumberInput(raw: string): number {
-  const n = parseFloat(raw.replace(',', '.').trim());
+  const n = parseFloat(raw.replace(',', '.').trim()); // PL często wpisuje przecinek
   return Number.isFinite(n) ? n : NaN;
 }
